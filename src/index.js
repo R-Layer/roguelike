@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom'
 import {Provider, connect} from 'react-redux';
 import {createStore} from 'redux';
 
-//import './index.css';
+import './index.css';
 
 class Presentational extends React.Component {
 
