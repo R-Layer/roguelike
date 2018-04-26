@@ -17,7 +17,6 @@ class Presentational extends React.Component {
     }
 };
 
-
 class App extends React.Component {
 
     constructor(props) {
@@ -39,8 +38,14 @@ class App extends React.Component {
         this.fogwar = true;
         this.counter = 0;
         this.enemyPositions = [ [120,120], [140,120], [100,120] ];
-        
+
+        this.player =  {hp: 30, weapon: 'knife', weaponValue: 8, level:1};
+
+        this.enemies = [ {hp: 10, weapon: 'dagger', weaponValue: 10, level:1}, 
+                         {hp: 10, weapon: 'dagger', weaponValue: 10, level:1}, 
+                         {hp: 10, weapon: 'dagger', weaponValue: 10, level:1} ]
     }
+
 componentDidMount() {
     document.addEventListener('keydown', this.arrowFunc, false);
     this.drawBase(); 
@@ -106,7 +111,8 @@ drawBase = () => {
 }
 
 checkCollision = (obstacle, ctx) => {
- 
+   
+
     const test = obstacle.data.filter( el => el !== 255);
 
     switch(true) 
@@ -118,20 +124,7 @@ checkCollision = (obstacle, ctx) => {
         case test[0] === 250:
             this.dx = this.newX;
             this.dy = this.newY;
-            this.counter++;
-            if ( this.counter > 2)
-            {
-             this.enemyPositions =  this.enemyPositions.filter(el =>
-                    {
-                      return  !( (38 + this.dx < el[0] && 52 + this.dx > el[0])
-                            &&
-                              (68 + this.dy < el[1] && 82 + this.dy > el[1]) )
-                    }
-                );
-                if (this.enemyPositions.length === 0 )
-                    this.door = false; 
-                 
-            }
+            this.enemyEncounter();
                 return;
         default:
             this.dx = this.newX;
@@ -139,6 +132,45 @@ checkCollision = (obstacle, ctx) => {
                 return;
     }
 }
+
+enemyEncounter = () => {
+
+    let enemyIndex;
+     this.enemyPositions.forEach( (el, ind) => 
+     {
+     if ( (38 + this.dx < el[0] && 52 + this.dx > el[0])
+     &&
+       (68 + this.dy < el[1] && 82 + this.dy > el[1]) ) 
+      enemyIndex =  ind;
+    });
+
+    this.fight(this.player, this.enemies[enemyIndex])
+}
+
+
+battleTurn = (attacker, defender) => {
+    defender.hp -= attacker.weaponValue + attacker.weaponValue/10 + attacker.level*2; 
+    return;
+}
+
+
+
+fight = (player, enemy) => {
+
+    console.log(player.weaponValue);
+
+ this.battleTurn(player, enemy);
+ if (enemy.hp > 0)
+    this.battleTurn(enemy, player);
+else 
+      {
+        this.enemyPositions.splice(this.enemyPositions.indexOf(enemy), 1);
+        this.enemies.splice(this.enemyPositions.indexOf(enemy), 1);
+      }
+
+ return ;
+}
+
 
 toggleDarkness = () => {
     this.fogwar = !this.fogwar;
