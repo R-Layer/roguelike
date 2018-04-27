@@ -34,6 +34,8 @@ SCHEME:
 - Second right center room 
 
 - Boss Room 
+
+- Fallen wall
 */
 
 
@@ -114,4 +116,7 @@ export const walls = new Path2D(`
 
    M90 220
    v -80 h 70 v 80
+
+   M40 220
+   h -6 v -2 h 4 v -2 h -2 v -1
    `);
