@@ -2,7 +2,17 @@
   margin: 5px;
   padding: 5px; }
 
+canvas {
+  border: 1px dashed blue;
+  width: 460px;
+  height: 620px; }
+
+button {
+  width: 15%; }
+
 .room {
-  width: 640px;
-  height: 480px;
-  border: 5px solid black; }
+  width: 840px;
+  height: 720px;
+  border: 5px solid black;
+  display: flex;
+  flex-flow: row nowrap; }

@@ -14,10 +14,8 @@ export class App extends React.Component {
         }
 
         // Canvas vars
-        this.height = 384;
-        this.width = 512;
-        this.canvX = 0;
-        this.canvY = 0;
+        this.width = 260;
+        this.height = 300;
 
         // Movement vars
         this.dx = 0;
@@ -28,12 +26,13 @@ export class App extends React.Component {
         // Game vars
         this.door = true;
         this.fogwar = false;
-        this.counter = 0;
         this.actualEnemy = {};
+
         this.creepsPositions = [ [55,180], [140,85], [100,122], [190, 30], [180,160],
                                 [190,195], [55,245], [190,245], ];
         this.guardsPositions = [ [40,240], [205,240], [115, 245], [135, 245] ]
         this.bossPosition    = [ [120,180] ];
+
         this.weaponsPositions = [  [175, 25], [125,270] ];
         this.healthsPositions = [ [70, 160], [125, 25], [175, 190], [195,270] ];
 
@@ -78,6 +77,8 @@ drawBase = () => {
     this.ctx = this._canvas.getContext('2d');                               
     this.ctx.clearRect( 0,0, this._canvas.width, this._canvas.height);
 
+    // To simulate the fogwar is being used a clipped path: the canvas is made black and that context is saved in order to return to it when the underlying drawing ( walls enemies  ... ) 
+    // is finished. 
     if (this.fogwar) 
     {
         this.ctx.fillRect(0,0, this.width, this.height);
@@ -113,37 +114,57 @@ drawBase = () => {
         this.ctx.fillRect(90, 215, 70, 5);
 
 
-    const obstacle = this.ctx.getImageData(45 + this.dx, 75 + this.dy, 4, 4);
-        
-    this.checkCollision(obstacle, this.ctx);
+    // To verify the presence of some obstacle close to the player it's used the getImageData function, which return the pixel rgba property thanks to which you can argue what's around you 
+    // ( since different object are represented by different colors )    
+    this.checkCollision( this.ctx.getImageData(45 + this.dx, 75 + this.dy, 4, 4) );
 
+    // This is the player square. Its coordinates are NOT dx dy, but newX and newY which acquire the dx/dy values just in case of no obstacle on the ground: else dx/dy will fallback to the 
+    // newX / newY values.
     this.ctx.fillStyle = "#000";
     this.ctx.fillRect(45 + this.newX, 75 + this.newY, 4, 4);
-  
+
     this.ctx.restore();
 }
 
-checkCollision = (obstacle, ctx) => {
-   
+reset = () => {
+    this.dx = 0;
+    this.dy = 0;
+    this.fogwar = false;
+    this.door = true;
 
-    const test = obstacle.data.filter( el => el !== 255);
+    this.player =  {maxHp: 50, hp:50, weapon: 'knife', weaponValue: 8, level:1};
+
+    this.creepsPositions = [ [55,180], [140,85], [100,122], [190, 30], [180,160],
+                             [190,195], [55,245], [190,245], ];
+    this.guardsPositions = [ [40,240], [205,240], [115, 245], [135, 245] ]
+    this.bossPosition    = [ [120,180] ];
+
+    this.weaponsPositions = [  [175, 25], [125,270] ];
+    this.healthsPositions = [ [70, 160], [125, 25], [175, 190], [195,270] ];
+}
+
+
+checkCollision = (surroundings) => {   
+
+    //Filter everthing not white to determinate what object is colliding to 
+    const obstacles = surroundings.data.filter( el => el !== 255);
     switch(true) 
     {
-        case test.length === 0:
+        case obstacles.length === 0:
             this.newX = this.dx;
             this.newY = this.dy;
                 return;
-        case test[0] === 250:
+        case obstacles[0] === 250:
             this.dx = this.newX;
             this.dy = this.newY;
-            this.enemyEncounter(test[1]);
+            this.enemyEncounter(obstacles[1]);
                 return;
-        case test[0] === 10:
+        case obstacles[0] === 10:
             this.newX = this.dx;
             this.newY = this.dy;
             this.weaponCollection();
             break;
-        case test[0] === 50:
+        case obstacles[0] === 50:
             this.newX = this.dx;
             this.newY = this.dy;
             this.healthCollection();
@@ -160,93 +181,92 @@ healthCollection = () => {
    
     let healthIndex = this.findMatch(this.healthsPositions);
 
-   this.healthsPositions.splice(healthIndex, 1);
+    this.healthsPositions.splice(healthIndex, 1);
 
-   this.player.hp  > (this.player.maxHp - 25)?this.player.hp = this.player.maxHp:this.player.hp+=25;
-   this.drawBase();
-    return ;
+    if ( this.player.hp > (this.player.maxHp -25) ) 
+        this.player.hp = this.player.maxHp;
+    else
+        this.player.hp += 25;
+
+    // Refresh the screen
+    this.drawBase();
+        return ;
 }
 
 weaponCollection = () => {
     let weaponIndex = this.findMatch(this.weaponsPositions);
    
-   this.player.weapon = this.weapons[weaponIndex].name;
-   this.player.weaponValue = this.weapons[weaponIndex].value;
+    this.player.weapon = this.weapons[weaponIndex].name;
+    this.player.weaponValue = this.weapons[weaponIndex].value;
 
-   this.weaponsPositions.splice(weaponIndex, 1);
-   this.drawBase();
-   return ;
+    this.weaponsPositions.splice(weaponIndex, 1);
+
+    this.drawBase();
+        return ;
 }
 
 enemyEncounter = (enemyColor) => {
-
-    let enemyIndex, enemy, outcome;
-
+    // Once confirmed the obstacle is an enemy here is being checked the second component of its rgba property, peculiar to each enemy
     switch(enemyColor) {
         case 0: 
-            enemyIndex = this.findMatch(this.creepsPositions);
-            if ( this.actualEnemy !== 'c' + enemyIndex)
-            this.actualEnemy = 'c' + enemyIndex;
-            enemy = Object.assign({}, this.creep, {id:this.creepsPositions[enemyIndex]});
-            
-            outcome =  this.fight(this.player, enemy);
-            if (outcome === 1)
-                {this.creepsPositions.splice(enemyIndex, 1);
-                
-                this.player.maxHp = this.player.level * 50;
-                
-                let tmp = this.player.level;
-                this.player.level += 0.20;
-                if (Math.floor(this.player.level) !== Math.floor(tmp))
-                    this.player.hp = this.player.maxHp
-                }
-                this.drawBase();
+            this.verifyEnemy(this.creep, this.creepsPositions);
             break;
         case 150:
-            enemyIndex = this.findMatch(this.guardsPositions);
-            enemy = this.guard;
-
-            outcome =  this.fight(this.player, enemy);
-            if (outcome === 1)
-                {this.guardsPositions.splice(enemyIndex, 1);
-                
-                this.player.maxHp = this.player.level * 50;
-                
-                let tmp = this.player.level;
-                this.player.level += 0.35;
-                if (Math.floor(this.player.level) !== Math.floor(tmp))
-                    this.player.hp = this.player.maxHp}
-                this.drawBase();
+            this.verifyEnemy(this.guard, this.guardsPositions);
             break;
         case 50: 
-            enemyIndex = this.findMatch(this.bossPosition);
-            enemy = this.boss;
-
-            outcome =  this.fight(this.player, enemy);
-            if (outcome === 1)
-                {this.bossPosition.splice(enemyIndex, 1);
-            
-                this.player.maxHp = this.player.level * 50;
-                
-                let tmp = this.player.level;
-                this.player.level += 1.00;
-                if (Math.floor(this.player.level) !== Math.floor(tmp))
-                    this.player.hp = this.player.maxHp}
-                this.drawBase();
+            this.verifyEnemy(this.boss, this.bossPosition);
             break;
         default:
             break;
     }
-    
+}
+verifyEnemy = (enemy, enemyArray) => {
 
+    const  enemyIndex = this.findMatch(enemyArray);
+    // Assignign an ID to the actual enemy is needed in order to avoid the following situation: hit an enemy, run, hit another enemy, back to the first one, etc. If the enemy hit is different 
+    // from the previous one it reassign the object properties ( read --> the original enemy stats ) to the actual enemy being hitted.
+    if  ( this.actualEnemy.id !== 'id-' + enemyArray[enemyIndex][0] + enemyArray[enemyIndex][1])
+        {
+            this.actualEnemy = Object.assign({}, enemy );
+            this.actualEnemy.id = 'id-' + enemyArray[enemyIndex][0] + enemyArray[enemyIndex][1];
+        }
+    this.encounterResult(enemyArray, enemyIndex);
+}
+
+encounterResult = (enemyArray, enemyIndex) => {
+
+  const  outcome =  this.fight(this.player, this.actualEnemy);
+    
+  switch(outcome) {
+    case -1:
+        this.reset();
+        break;
+    case 1:
+        enemyArray.splice(enemyIndex, 1);
+        
+        // Check for level gains
+        if ( Math.floor( this.player.level) !== Math.floor(this.player.level + 0.2 * this.actualEnemy.level) ) {
+            this.player.maxHp = (Math.floor(this.player.level) + 1) * 50;
+            this.player.hp = this.player.maxHp; 
+            }
+            this.player.level += (0.2 * this.actualEnemy.level);
+        break;
+    default:
+        break;
+  }
+    // When all the guards will be defeated the door to the boss will open!
     if (this.guardsPositions.length === 0) 
         this.door = false;
-}
+
+    this.drawBase();
+};
+
 
 fight = (player, enemy) => {
 
     console.log(`player: ${this.player.hp} - enemy: ${enemy.hp}`);
-    console.log( this.player.weapon);
+    console.log( this.player.weapon + ' - ' + this.player.level);
     if (player.hp > 0)
         this.battleTurn(player, enemy);
     else 
@@ -262,6 +282,7 @@ fight = (player, enemy) => {
 
 
 battleTurn = (attacker, defender) => {
+    // Simple expression to determine how much damage is inflicted based on weapon, level and a random modifier
     defender.hp -= Math.floor(attacker.weaponValue + (Math.random()*5*attacker.weaponValue/10) + Math.floor(attacker.level)*3); 
     return;
 }
@@ -269,6 +290,8 @@ battleTurn = (attacker, defender) => {
 
 findMatch = (arr) => {
     let matchIndex = 0;
+    // It iterate throught all the obstacles ( which is an array of every colored pixel in the surrounding ) until it match the coordinates of the current obstacle
+    // in the corresponding array ( health, weapons, guards, ...) passed in as parameter
     arr.forEach( (el, ind) => 
     {
         if ( (38 + this.dx < el[0] && 52 + this.dx > el[0])
@@ -288,8 +311,8 @@ toggleDarkness = () => {
         return (
             <div>
                 <button onClick={this.toggleDarkness}>Toggle Darkness</button>
-            <canvas ref={canvas => this._canvas=canvas} width={this.width} height={this.height} className="room">
-            </canvas>
+                <canvas ref={canvas => this._canvas=canvas} width={this.width} height={this.height}>
+                </canvas>
             </div>
         );
     };

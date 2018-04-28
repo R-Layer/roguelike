@@ -12,7 +12,7 @@ class Presentational extends React.Component {
 
 
     render() {
-        return (<div>
+        return (<div className="room">
                     <Cockpit />
                     <App />
                 </div>)
