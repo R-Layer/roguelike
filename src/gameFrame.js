@@ -1,12 +1,12 @@
 import React from 'react';
 
 import './index.css';
-import {walls} from './path.js';
+//import {walls} from './path.js';
 
 
 export class App extends React.Component {
 
-    constructor(props) {
+/*     constructor(props) {
         super(props);
         
         this.state = {
@@ -48,7 +48,8 @@ export class App extends React.Component {
 
 componentDidMount() {
     document.addEventListener('keydown', this.arrowFunc, false);
-    this.drawBase(); 
+    //this.drawBase();
+    this.props.refresh();
 }
 
 componentWillUnmount() {
@@ -70,7 +71,8 @@ arrowFunc = (event) =>  {
         default: 
             break;            
     };
-   this.drawBase();
+   //this.drawBase();
+   this.props.refresh();
 };
 
 drawBase = () => {
@@ -79,7 +81,8 @@ drawBase = () => {
 
     // To simulate the fogwar is being used a clipped path: the canvas is made black and that context is saved in order to return to it when the underlying drawing ( walls enemies  ... ) 
     // is finished. 
-    if (this.fogwar) 
+    
+    if (this.props.isFog) 
     {
         this.ctx.fillRect(0,0, this.width, this.height);
         this.ctx.save();
@@ -125,7 +128,7 @@ drawBase = () => {
 
     this.ctx.restore();
 }
-
+ 
 reset = () => {
     this.dx = 0;
     this.dy = 0;
@@ -189,7 +192,8 @@ healthCollection = () => {
         this.player.hp += 25;
 
     // Refresh the screen
-    this.drawBase();
+    //this.drawBase();
+    this.props.refresh();
         return ;
 }
 
@@ -201,7 +205,8 @@ weaponCollection = () => {
 
     this.weaponsPositions.splice(weaponIndex, 1);
 
-    this.drawBase();
+   // this.drawBase();
+   this.props.refresh();
         return ;
 }
 
@@ -259,7 +264,8 @@ encounterResult = (enemyArray, enemyIndex) => {
     if (this.guardsPositions.length === 0) 
         this.door = false;
 
-    this.drawBase();
+    //this.drawBase();
+    this.props.refresh();
 };
 
 
@@ -300,19 +306,13 @@ findMatch = (arr) => {
                  matchIndex =   ind;
    });
    return matchIndex;
-}
+} */
 
-toggleDarkness = () => {
-    this.fogwar = !this.fogwar;
-    this.drawBase();
-}
     render () {
         
         return (
             <div>
-                <button onClick={this.toggleDarkness}>Toggle Darkness</button>
-                <canvas ref={canvas => this._canvas=canvas} width={this.width} height={this.height}>
-                </canvas>
+                <canvas ref={this.props.canvasRef} width={this.props.width} height={this.props.height} />
             </div>
         );
     };

@@ -5,14 +5,14 @@
 canvas {
   border: 1px dashed blue;
   width: 460px;
-  height: 620px; }
+  height: 420px; }
 
 button {
   width: 15%; }
 
 .room {
   width: 840px;
-  height: 720px;
+  height: 520px;
   border: 5px solid black;
   display: flex;
   flex-flow: row nowrap; }
