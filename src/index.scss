@@ -1,6 +1,10 @@
+*{
+ box-sizing: border-box;   
+}
+
 @mixin test{
-    margin:5px;
-    padding: 5px;
+    margin:0px;
+    padding: 0px;
 };
 
 .topLevel {
@@ -8,19 +12,140 @@
 }
 
 canvas {
-    border: 1px dashed blue;
-    width: 460px;
-    height: 420px;
+    border: 2px solid black;
+    width: 400px;
+    height: 480px;
 }
 
 button {
-    width: 15%;
+    width: 100%;
+    text-align: center;
 }
+// Main container
 .room {
     width: 840px;
-    height: 520px;
+    height: 620px;
     border: 5px solid black;
+    background-color: #959697;
 
     display: flex;
-    flex-flow: row nowrap;
+    flex-flow: row wrap;
+    justify-content: space-around;
+    padding: 10px;
 }
+
+// First level child - container of data visualization
+.cockpit{
+    width: 400px;
+    height: 480px;
+    display: flex;
+    flex-flow: column nowrap;
+    position: relative;
+    margin-right: 10px;
+}
+
+//First level child - container of footer section
+.instructions {
+flex: 100% 0 0;
+display: flex;
+flex-wrap: wrap;
+border: 1px solid red;
+height: 100px;
+}
+
+// ----------------------------------------------------- Values display section
+.statRow {
+    display: flex;
+    flex-flow: row nowrap;
+    text-align: center;
+    height: 140px;
+    background-color: black;
+
+    &.statEnemy {
+        position: relative;
+        bottom: -30px;
+        
+        & .statLabel {
+            color: #b00;
+            background-color: #757677;
+        }
+        & .statValue {
+            color: #a05030;
+        }
+    }
+}
+
+.statBlock {
+    flex: 100% 0 0;
+    display: flex;
+    flex-flow: column nowrap;
+    margin: 0px;
+    border: 1px solid black;
+}
+
+.statValue {
+    flex: 2 0 0;
+    margin: 0;
+    padding: 25px;
+    background: radial-gradient(#383838, #000);
+    color: #50a030;
+    font: 300 1.4em Verdana;
+}
+
+.statLabel {
+    flex: 1 0 0;
+    background-color: #757677;
+    font: bold 1em Times;
+}
+
+.innerLabel {
+    font: 500 0.6em Verdana;
+}
+//------------------------------------------------------
+// -----------------------------------------------------   Footer section
+.instructionElement{
+    flex: 1 0 45%;
+    padding: 5px;
+    margin: 5px;
+    font: 300 1em Times;
+    text-align: center;
+    background-color: #d3c0c1;
+    color: #33f;
+
+    &:nth-child(3){
+        flex: 100% 0 0;
+        display: flex;
+        justify-content: space-around;
+        
+    }
+}
+
+.legendColor {
+    display: inline-block;
+    height: 10px; 
+    width: 10px;
+    padding: 5px;
+    margin: auto 5px;
+    }
+
+.legendElement {
+    padding: 5px;
+    color: #33f;
+
+    &:nth-of-type(1) .legendColor{
+        background-color: green;
+    }
+    &:nth-of-type(2) .legendColor{
+        background-color: blue;
+    }
+    &:nth-of-type(3) .legendColor{
+        background-color: #c03050;
+    }
+    &:nth-of-type(4) .legendColor{
+        background-color: #c09030;
+    }
+    &:nth-of-type(5) .legendColor{
+        background-color: #c030c0;
+    }    
+}
+// ----------------------------------------

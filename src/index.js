@@ -7,8 +7,6 @@ import './index.css';
 
 import {walls} from './path.js';
 
-import {App} from './gameFrame.js';
-
 // ########## REACT PART ####################################
 class Presentational extends React.Component {
 
@@ -62,7 +60,6 @@ arrowFunc = (event) =>  {
 };
 
     drawBase = () => {
-        //this.ctx = this._canvas.getContext('2d');  
         const ctx = this.canv.getContext('2d');                               
         ctx.clearRect( 0,0, this.canv.width, this.canv.height);
         // To simulate the fogwar is being used a clipped path: the canvas is made black and that context is saved in order to return to it when the underlying drawing ( walls enemies  ... ) 
@@ -76,7 +73,7 @@ arrowFunc = (event) =>  {
             ctx.clip();   
         }
         ctx.fillStyle = ('rgba(255, 255, 255, 255)');
-        ctx.fillRect(0 + this.dx, 0 + this.dy, this.width, this.height); 
+        ctx.fillRect(0 - Math.abs(this.dx), 0 - Math.abs(this.dy), this.width + Math.abs(this.dx), this.height + Math.abs(this.dy)); 
     
         ctx.lineWidth= 2;
         ctx.lineCap = 'square';
@@ -111,7 +108,7 @@ arrowFunc = (event) =>  {
         // newX / newY values.
         ctx.fillStyle = "#000";
         ctx.fillRect(45 + this.newX, 75 + this.newY, 4, 4);
-    
+        
         ctx.restore();
     }
     
@@ -151,7 +148,6 @@ arrowFunc = (event) =>  {
        
         let healthIndex = this.findMatch(this.props.objectsArray[0].healthsPositions);
     
-       //this.setState({ healthsPositions: [...this.state.healthsPositions.slice(0, healthIndex), ...this.state.healthsPositions.slice(healthIndex + 1)]} );
         this.props.removeHealth(healthIndex);
         this.props.modifyPlayerHp(this.props.playerStats.hp, this.props.playerStats.maxHp);
 
@@ -160,12 +156,13 @@ arrowFunc = (event) =>  {
     
     weaponCollection = () => {
         let weaponIndex = this.findMatch(this.props.objectsArray[1].weaponsPositions);
-       
-        //this.setState({player: Object.assign({}, this.state.player, {weapon : this.weapons[weaponIndex].name, weaponValue : this.weapons[weaponIndex].value}) });
+       console.log(weaponIndex);
         this.props.modifyPlayerWeapon(this.weapons[weaponIndex].name, this.weapons[weaponIndex].value);
-        //this.state.weaponsPositions.splice(weaponIndex, 1);
-        this.setState({ weaponsPositions: [...this.state.weaponsPositions.slice(0, weaponIndex), ...this.state.weaponsPositions.slice(weaponIndex +1 )]});
-       // this.drawBase();
+        
+        this.props.removeWeapon(weaponIndex);
+        console.log(this.weapons);
+        this.weapons.splice(weaponIndex, 1);
+        console.log(this.weapons);
             return ;
     }
     
@@ -191,36 +188,30 @@ arrowFunc = (event) =>  {
         // from the previous one it reassign the object properties ( read --> the original enemy stats ) to the actual enemy being hitted.
         if  ( this.props.actualEnemyStats.id !== 'id-' + enemyArray[enemyIndex][0] + enemyArray[enemyIndex][1])
             {
-               //this.setState({actualEnemy : Object.assign({}, enemy, {id : 'id-' + enemyArray[enemyIndex][0] + enemyArray[enemyIndex][1]} )}) ;
-               this.props.modifyActualEnemy( Object.assign( {}, enemy, {id : 'id-' + enemyArray[enemyIndex][0] + enemyArray[enemyIndex][1]} ) );
-                //this.actualEnemy.id = 'id-' + enemyArray[enemyIndex][0] + enemyArray[enemyIndex][1];
-            }
+                this.props.modifyActualEnemy( Object.assign( {}, enemy, {id : 'id-' + enemyArray[enemyIndex][0] + enemyArray[enemyIndex][1]} ) );
+              }
         this.encounterResult(enemyArray, enemyIndex);
     }
     
     encounterResult = (enemyArray, enemyIndex) => {
     
-      //const  outcome =  this.fight(this.state.player, this.state.actualEnemy);
       const  outcome =  this.fight(this.props.playerStats, this.props.actualEnemyStats);
         
       switch(outcome) {
-        case -1:
+        case -1:  // You died, game reset itself
             this.reset();
             this.props.resetGame();
             break;
-        case 1:
-            //enemyArray.splice(enemyIndex, 1);
+        case 1: // You win, enemy is removed from the list ( enemyposition it's removed so it's not mapped anymore)
            this.props.removeEnemy(this.props.actualEnemyStats.level, enemyIndex); 
-            // Check for level gains
+            
             this.props.modifyPlayerLevel( 0.2 * this.props.actualEnemyStats.level);
-
+            // Check for level gains
             if ( Math.floor( this.props.playerStats.level) !== Math.floor(this.props.playerStats.level - 0.2 * this.props.actualEnemyStats.level) ) {
-               //this.setState({player: Object.assign( {}, this.state.player, {maxHp:(Math.floor(this.player.level) + 1) * 50}, {hp : this.state.player.maxHp}, {level : (0.2 * this.state.actualEnemy.level)}) })
-                //this.state.player.hp = this.state.player.maxHp; 
                 this.props.modifyPlayerHp( Math.floor(this.props.playerStats.level) * 40, Math.floor(this.props.playerStats.level) * 40);
                 }
-                //this.state.player.level += (0.2 * this.state.actualEnemy.level);
-                
+
+            this.props.modifyActualEnemy( Object.assign( {}, {} ));
             break;
         default:
             break;
@@ -229,9 +220,7 @@ arrowFunc = (event) =>  {
     
     
     fight = (player, enemy) => {
-        console.log(player);
-        console.log(`player: ${player.hp} - enemy: ${enemy.hp}`);
-        console.log( player.weapon + ' - ' + player.level);
+
         if (player.hp > 0)
             this.battleTurn(player, enemy);
         else 
@@ -255,7 +244,7 @@ arrowFunc = (event) =>  {
     
     findMatch = (arr) => {
         let matchIndex = 0;
-        // It iterate throught all the obstacles ( which is an array of every colored pixel in the surrounding ) until it match the coordinates of the current obstacle
+        // It iterate throught all the obstacles ( which is an array of every coloured pixel in the surrounding ) until it match the coordinates of the current obstacle
         // in the corresponding array ( health, weapons, guards, ...) passed in as parameter
         arr.forEach( (el, ind) => 
         {
@@ -268,18 +257,23 @@ arrowFunc = (event) =>  {
     }
 
 
-    test = () => {
+    toggleFog = () => {
         this.props.toggleFogwar();
-        this.drawBase();
     }
 
 
     render() {
         return (<div className="room">
-                    <Cockpit testing={this.test} />
-                    <App canvasRef={el => this.canv = el}
+                    <Cockpit toggleFogwar={this.toggleFog} 
+                                isFog={this.props.isFog}
+                                playerStats={this.props.playerStats}
+                                enemyStats={this.props.actualEnemyStats}
+                                />
+                    <App refresh={this.drawBase}
+                         canvasRef={el => this.canv = el}
                          width={this.width}
                          height={this.height} />
+                    <Footer />
                 </div>)
     }
 };
@@ -289,21 +283,102 @@ class Cockpit extends React.Component {
 
     render() {
         return (
-        <div>
-            <button onClick={this.props.testing}/>
+        <div className="cockpit">
+            <button onClick={this.props.toggleFogwar}> 
+                {this.props.isFog?'TURN ON THE LIGHT':'TURN OFF THE LIGHT'}
+            </button>
+            <section className="statRow">
+                <dl className="statBlock">
+                    <dd className="statValue">{this.props.playerStats.maxHp}</dd>
+                    <dt className="statLabel">Max Health</dt>
+                </dl>
+                <dl className="statBlock">    
+                    <dd className="statValue">{Math.floor(this.props.playerStats.level)}</dd>
+                    <dt className="statLabel">Level</dt>                    
+                </dl>
+            </section>
+            <section className="statRow">
+                <dl className="statBlock">
+                    <dd className="statValue">{this.props.playerStats.weaponValue} <br/> <span className="innerLabel">{this.props.playerStats.weapon} </span></dd>
+                    <dt className="statLabel">Weapon</dt>
+                </dl>
+                <dl className="statBlock">  
+                    <dd className="statValue">{this.props.playerStats.hp}</dd>
+                    <dt className="statLabel">Health</dt>                    
+                </dl>
+            </section>
+            <section className="statRow statEnemy">
+                <dl className="statBlock">
+                    <dd className="statValue">{this.props.enemyStats.weaponValue?this.props.enemyStats.weaponValue:'--'}  <br/> <span className="innerLabel">{this.props.enemyStats.weapon?this.props.enemyStats.weapon:''}</span></dd>
+                    <dt className="statLabel">Enemy weapon</dt>
+                </dl>
+                <dl className="statBlock">  
+                    <dd className="statValue">{this.props.enemyStats.hp?this.props.enemyStats.hp:'--'}</dd>
+                    <dt className="statLabel">Enemy health</dt>                    
+                </dl>
+            </section>
         </div>
         )
     }
 }
 
+class App extends React.Component {
+
+    componentDidUpdate() {
+        this.props.refresh();
+    };
+
+    render () {
+        
+        return (
+            <div className="gameFrame">
+                <canvas ref={this.props.canvasRef} width={this.props.width} height={this.props.height} />
+            </div>
+        );
+    };
+};
+
+class Footer extends React.Component {
+    render() {
+        return (
+            <section className="instructions">
+                    <div className="instructionElement">Focus clicking into the map and move with the arrow keys</div>
+                    <div className="instructionElement">Kill all the guards to open the way to the boss! </div>
+                    <div className="instructionElement">
+                         <div className="legendElement">
+                            <span className="legendColor"></span>
+                            <span className="legendLabel">Healing potion</span>
+                        </div>
+                        <div className="legendElement">
+                            <span className="legendColor"></span>
+                            <span className="legendLabel">Weapon</span>
+                        </div>
+                        <div className="legendElement">
+                            <span className="legendColor"></span>
+                            <span className="legendLabel">Creeps</span>
+                        </div>
+                        <div className="legendElement">
+                            <span className="legendColor"></span>
+                            <span className="legendLabel">Guards</span>
+                        </div>
+                        <div className="legendElement">
+                            <span className="legendColor"></span>
+                            <span className="legendLabel">Boss</span>
+                        </div>
+                        </div> 
+            </section>
+        )
+    }
+}
 // ############## REDUX PART #################################
+
 const TOGGLEFOG = 'TOGGLEFOG';
 
 const toggleFogwar = () => {
     return {type: TOGGLEFOG};
 };
 
-const toggleFogReducer = (state = false, action) => {
+const toggleFogReducer = (state = true, action) => {
     switch(action.type)
     {
         case TOGGLEFOG:
@@ -375,7 +450,7 @@ const removeWeapon = (index) => {
 const defaultObjsState =   [{healthsPositions: [[70, 160], [125, 25], [175, 190], [195,270] ]}, 
                             {weaponsPositions: [[175, 25], [125,270] ]}]
 
-
+// It apply the default state deeply cloning the default array
 const objectsReducer = (state = JSON.parse(JSON.stringify(defaultObjsState)), action) => {
     switch(action.type)
     {
@@ -412,7 +487,7 @@ const defaultEnemyState =   [{creepsPositions: [ [55,180], [140,85], [100,122], 
                             {guardsPositions: [ [40,240], [205,240], [115, 245], [135, 245] ]},
 
                             {bossPosition   : [ [120,180] ]}]
-
+// Again a deep copy of the default state
 const enemyReducer = (state = JSON.parse(JSON.stringify(defaultEnemyState)), action) => {
     switch(action.type)
     {
@@ -430,6 +505,8 @@ const enemyReducer = (state = JSON.parse(JSON.stringify(defaultEnemyState)), act
     }
 };
 
+// Here all the reducer are combined together but instead to directy create the store it's passed to another reducer, used to gain control about the default setup. To reset 
+// everything to the default values is passed 'undefined' as state to the root reducer 'resetting' all the dependant states
 const appReducer = combineReducers({toggleFog: toggleFogReducer, player: playerReducer, actualEnemy: actualEnemyReducer, objects: objectsReducer, enemies: enemyReducer });
 
 // ---------------------------------------------------------------------------------------
